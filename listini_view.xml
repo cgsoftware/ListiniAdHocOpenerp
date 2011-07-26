@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+  
+        <record model="ir.ui.view" id="product_listini_form">
+            <field name="name">product.listini.form</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.product_normal_form_view"/>
+                <field name="arch" type="xml">
+	                <notebook position="inside">        
+				  <page string="Listini e Prezzi">
+					<separator string="Listini Articolo" />				  
+				  	<field name="righe_listini" select='2' colspan="4" nolabel="1" string="Listini Articoli">
+				  		<tree editable="top">
+				  			<field name="listino_id" size='5' on_change="on_change_listino(listino_id)" />
+				  			<field name='default_price'></field>
+				  			<field name="prezzo" size='10' on_change="on_change_prezzo(discount_riga,prezzo)" />
+				  			<field name="sconti" on_change="on_change_sconti(sconti,prezzo)" />	    
+				  			<field name="discount_riga" />	   
+				  			<field name="prezzo_netto" />	   				  			
+				  		</tree>				  		
+				  	</field>
+					<separator string="Ultimi Prezzi"  />					
+				  	<field name="righe_ultimi_prezzi" colspan="4" nolabel="1" string="Ultimi Prezzi praticati" >
+				  		<tree editable="top">
+				  			<field name="data_documento" size='10' />
+				  			<field name="partner_id" size='10'/>				  			
+				  			<field name="qty" size='10'/>
+				  			<field name="prezzo" size='10' on_change="on_change_prezzo(discount_riga,prezzo)" />				  			
+				  			<field name="sconti"  on_change="on_change_sconti(sconti,prezzo)" />	    
+				  			<field name="discount_riga" />	   
+				  			<field name="prezzo_netto" />	   				  			
+				  		</tree>				  		
+				  		
+				  	</field>
+				  </page>
+			</notebook>
+
+		  </field>
+        </record>
+    
+    	<record model="ir.ui.view" id="res_partner_contratti">
+    		<field name="name">res.partner.contratti</field>
+    		<field name="model">res.partner</field>
+    		<field name="inherit_id" ref="base.view_partner_form"/>
+    		<field name="arch" type="xml">
+    			<notebook position="inside">        
+    				<page string="Condizioni Contrattuali ">
+    					<separator  string="Contratti "/>
+    					<field colspan="4" name="righe_contratti" nolabel="1" string="Contratti Partner" >
+    						<tree editable="top">
+    							<field name="product_id" size='20' />
+    							<field name="categ_id" size='10'/>				  			
+    							<field name="fromqty" size='10'/>
+    							<field name="toqty" size='10'/>    							
+    							<field name="prezzo"  size='10'/>				  			
+    							<field name="sconti" on_change="on_change_sconti(sconti,prezzo)" />	    
+    							<field name="discount_riga" />	   		  			
+    						</tree>				  		
+    						
+    					</field>
+    				</page>
+    			</notebook>
+    		</field>
+    	</record>
+    			
+    
+    	<record model="ir.ui.view" id="product_pricelist_default_form">
+    		<field name="name">product.pricelist.default.form</field>
+    		<field name="model">product.pricelist</field>
+    		<field name="inherit_id" ref="product.product_pricelist_view"/>
+    		<field name="arch" type="xml">
+    			<field name="currency_id" position="before">
+    				<field name="default_price"/>
+    			</field>
+    			
+    		</field>
+    	</record>
+    	
+    	
+    	<record model="ir.ui.view" id="product_price_default_tree">
+    		<field name="name">product.price.default.tree</field>
+    		<field name="model">product.product</field>
+    		<field name="inherit_id" ref="product.product_product_tree_view"/>
+    		<field name="arch" type="xml">
+    			<field name="virtual_available" position="after">
+    				<field name="price_default"/>
+    			</field>
+    			<field name="type" position='replace'>
+    				<field name="type" invisible="1"/>
+    			</field>
+    			<field name="lst_price" position='replace'/>
+    			<field name="price" position='replace'/>
+    			<field name="standard_price" position='replace'/>
+    			
+    		</field>
+    	</record>
+    	
+    	
+    	<record model="ir.ui.view" id="view_order_form_disco2">
+    		<field name="name">view.order.form.disco2</field>
+    		<field name="model">sale.order</field>
+    		<field name="inherit_id" ref="sale.view_order_form"/>
+    		<field name="arch" type="xml">	
+    			<field name='product_packaging'  position="replace" ></field>
+    			<field name='discount'  position="replace" ></field>
+    			<field name="price_unit" position="replace">
+    				<field name='price_unit' on_change="on_change_price_unit(price_unit,discount)" ></field>
+    				<field name="string_discount" on_change="on_change_stringa_sc(string_discount,price_unit)"/>
+    				<field name='discount'  on_change="Calcolo_netto(discount,price_unit)"></field>
+    				<field name="prezzo_netto" />
+    			</field>
+    		</field>
+    	</record>
+    	
+  
+    
+    </data>
+ </openerp>

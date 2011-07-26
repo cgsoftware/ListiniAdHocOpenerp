@@ -1,0 +1,4 @@
+"id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
+"access_listini","listini","model_listini",,1,1,1,1
+"access_ultimi_prezzi","Ultimi.prezzi","model_ultimi_prezzi",,1,1,1,1
+"access_contratti_partner","contratti.partner","model_contratti_partner",,1,1,1,1
