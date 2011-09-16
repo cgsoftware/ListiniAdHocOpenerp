@@ -85,8 +85,6 @@
     		<field name="arch" type="xml">
     			<field name="virtual_available" position="after">
     				<field name="price_default"/>
-				<field name="price_default_iva_inc"/>
-				
     			</field>
     			<field name="type" position='replace'>
     				<field name="type" invisible="1"/>

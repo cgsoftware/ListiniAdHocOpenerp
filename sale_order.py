@@ -22,41 +22,14 @@ class sale_order_line(osv.osv):
                 }
     
     def on_change_stringa_sc(self, cr, uid, ids, value, price_unit, context=None):
-        #import pdb;pdb.set_trace()
-        if value:
-            lista_sconti = value.split("+")
-            sconto = float(100)
-            for scontoStr in lista_sconti:
-                if scontoStr <> "+":
-                    sconto = sconto - (sconto * float(scontoStr) / 100)
-            sconto = (100 - sconto)
-        else:
-            sconto = 0
+        sconto = self.pool.get('listini').Calcolo_Sconto(cr, uid, ids, value)
         prezzo = price_unit - (price_unit * sconto / 100)
         return  {'value': {'discount': sconto, 'prezzo_netto': prezzo}}
     
     
     def Calcolo_Sconto(self, cr, uid, ids, value, context=None):
-        
-        # import pdb;pdb.set_trace()
-        if value:
-            lista_sconti = value.split("+")
-            sconto = float(100)
-            for scontoStr in lista_sconti:
-                if '-' in scontoStr :
-                    First = True
-                    for ScoMeno in scontoStr.split('-'):
-                        if First:
-                            First = False
-                            sconto = sconto - (sconto * float(ScoMeno) / 100)
-                        else:
-                            sconto = sconto + (sconto * float(ScoMeno) / 100)                        
-                else:
-                    sconto = sconto - (sconto * float(scontoStr) / 100)
-
-            sconto = (100 - sconto)
-        else:
-            sconto = 0
+      
+        sconto = self.pool.get('listini').Calcolo_Sconto(cr, uid, ids, value)
         
         return  {'value': {'discount': sconto}}
   
@@ -80,15 +53,14 @@ class sale_order_line(osv.osv):
         return  {'value': {'prezzo_netto': prezzo}}  
 
     def product_id_change(self, cr, uid, ids, pricelist, product, qty=0, uom=False, qty_uos=0, uos=False, name='', partner_id=False, lang=False, update_tax=True, date_order=False, packaging=False, fiscal_position=False, flag=False):
-
+        #import pdb;pdb.set_trace()
         reso = super(sale_order_line, self).product_id_change(cr, uid, ids, pricelist, product, qty, uom, qty_uos, uos, name, partner_id, lang, update_tax, date_order, packaging, fiscal_position, flag)
         # segue prima la strada normale poi si cerca il listino secondo le vecchie regole ad-Hoc
         result = reso['value']
         domain = reso['domain']
         warning = ''
         #import pdb;pdb.set_trace()
-        if product:
-         #import pdb;pdb.set_trace()
+        if product:     
          riga_listino = self.pool.get('product.pricelist').price_get_adhoc(cr, uid, [pricelist], product, qty, partner_id, context=False)
          if riga_listino:
             # assegna i campi che ha a disposizione

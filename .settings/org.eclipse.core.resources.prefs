@@ -1,5 +1,7 @@
-#Thu Jun 30 20:19:20 CEST 2011
+#Mon Sep 12 18:01:16 CEST 2011
 eclipse.preferences.version=1
+encoding/FiscalDocument.py=utf-8
+encoding/point_of_sale.py=utf-8
 encoding/product.py=utf-8
 encoding/product_old.py=utf-8
 encoding/sale_order.py=utf-8

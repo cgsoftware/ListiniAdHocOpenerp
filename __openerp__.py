@@ -27,7 +27,7 @@
     listini, e fa si che vengano storicizzati gli ultimi prezzi di per partner in un secondo momento sarà possibile anche ripresentare questa informazione
     nella vendita
     """,
-    "depends" : ["base", "product", "sale", "product_visible_discount"],
+    "depends" : ["base", "product", "sale", "product_visible_discount", "ItalianFiscalDocument", "point_of_sale"],
     "init_xml" : [],
     "demo_xml" : [],
     "update_xml" : ['listini_view.xml', 'security/ir.model.access.csv'],

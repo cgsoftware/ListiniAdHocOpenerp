@@ -21,16 +21,20 @@ class product_pricelist(osv.osv):
                     }
         
     def price_get_adhoc(self, cr, uid, ids, prod_id, qty, partner=None, context=None):
+        # manca il controllo sulle date di attivazione da a
         # legge i prezzi dal listino
         #import pdb;pdb.set_trace()
         res = {}
         if partner:
             # to do c'è il partner cerca quindi nel contratto che vince sul listino
-            pass
+            #import pdb;pdb.set_trace()
+            res = self.pool.get('contratti.partner').cerca_contratto(cr, uid, ids, partner, prod_id, qty)
+            #import pdb;pdb.set_trace()
         if not res:
             # non ha trovato nulla legato al contratto cerca puramente il listino
-                price_id = self.pool.get('listini').search(cr, uid, [('product_id', '=', prod_id), ('listino_id', '=', ids[0])], context=context)[0]
+                price_id = self.pool.get('listini').search(cr, uid, [('product_id', '=', prod_id), ('listino_id', '=', ids[0])], context=context)
                 if price_id:
+                 price_id = price_id[0]
                  price_rec = self.pool.get('listini').browse(cr, uid, [price_id])[0]
                  # res = price_rec
                  res.update({'prezzo_netto':price_rec.prezzo_netto})
@@ -61,6 +65,35 @@ class listini(osv.osv):
 
                } 
    
+   def Calcolo_Sconto(self, cr, uid, ids, value):
+        if value :
+            lista_sconti = value.split("+")
+            sconto = float(100)
+            for scontoStr in lista_sconti:
+                if '-' in scontoStr and len(lista_sconti) == 1:
+                    #  È IL CASO DI UN UNICO VALORE '-20'
+                    ScoMeno = scontoStr.split('-')[1]
+                    sconto = sconto + (sconto * float(ScoMeno) / 100)  
+                else:              
+                 if '-' in scontoStr:
+                    First = True
+                    for ScoMeno in scontoStr.split('-'):
+                        #import pdb;pdb.set_trace()
+                        if ScoMeno:
+                         if First:
+                            First = False
+                            sconto = sconto - (sconto * float(ScoMeno) / 100)
+                         else:
+                            sconto = sconto + (sconto * float(ScoMeno) / 100)                        
+                 else:
+                    sconto = sconto - (sconto * float(scontoStr) / 100)
+                    
+            sconto = (100 - sconto)
+        else:
+            sconto = 0
+
+       
+        return sconto
    
    def on_change_prezzo(self, cr, uid, ids, sconto, prezzo): 
        v = {}
@@ -76,32 +109,12 @@ class listini(osv.osv):
    
    def on_change_sconti(self, cr, uid, ids, value, prezzo):
        #import pdb;pdb.set_trace()
-        v = {}
-        if value :
-            lista_sconti = value.split("+")
-            sconto = float(100)
-            for scontoStr in lista_sconti:
-                if '-' in scontoStr :
-                    First = True
-                    for ScoMeno in scontoStr.split('-'):
-                        if First:
-                            First = False
-                            sconto = sconto - (sconto * float(ScoMeno) / 100)
-                        else:
-                            sconto = sconto + (sconto * float(ScoMeno) / 100)                        
-                else:
-                    sconto = sconto - (sconto * float(scontoStr) / 100)
-                    
-            sconto = (100 - sconto)
+            v = {}
+            sconto = self.Calcolo_Sconto(cr, uid, ids, value)
             v['discount_riga'] = sconto
             v['prezzo_netto'] = self.calcola_netto(prezzo, sconto)          
-        else:
-            sconto = 0
-            v['discount_riga'] = sconto
-            v['prezzo_netto'] = prezzo          
-            
 
-        return  {'value': v}    
+            return  {'value': v}    
    
    def on_change_listino(self, cr, uid, ids, value):
        #import pdb;pdb.set_trace()
@@ -194,6 +207,62 @@ class contratti_partner(osv.osv):
 
                }
 
+   
+   def cerca_contratto(self, cr, uid, ids, partner, product, qty):
+       
+       def _create_parent_category_list(id, lst):
+            if not id:
+                return []
+            parent = product_category_tree.get(id)
+            if parent:
+                lst.append(parent)
+                return _create_parent_category_list(parent, lst)
+            else:
+                return lst
+       
+       riga = {}
+       product_category_obj = self.pool.get('product.category')
+       ids_righe = self.search(cr, uid, [('partner_id', '=', partner)])
+       if ids_righe:
+           # ci sono righe di contratto 
+           product_obj = self.pool.get('product.product').browse(cr, uid, product)
+           # product.category:
+           product_category_ids = product_category_obj.search(cr, uid, [])
+           product_categories = product_category_obj.read(cr, uid, product_category_ids, ['parent_id'])
+           product_category_tree = dict([(item['id'], item['parent_id'][0]) for item in product_categories if item['parent_id']])  
+           categ_ids = _create_parent_category_list(product_obj.categ_id.id, [product_obj.categ_id.id])
+           # cerca l' articolo
+           ids_articolo = self.search(cr, uid, [('partner_id', '=', partner), ('product_id', '=', product)])
+           if ids_articolo:
+               for riga_contr in self.browse(cr, uid, ids_articolo):
+                   if qty >= riga_contr.fromqty and qty <= riga_contr.toqty:
+                       riga.update({'prezzo_netto':riga_contr.prezzo - (riga_contr.prezzo * riga_contr.discount_riga / 100)})
+                       riga.update({'sconti':riga_contr.sconti})
+                       riga.update({'discount_riga':riga_contr.discount_riga})
+                       riga.update({'prezzo':riga_contr.prezzo})
+           if not riga:
+               # non ha trovato un articolo interessante
+               ids_categ = self.search(cr, uid, [('partner_id', '=', partner), ('categ_id', 'in', categ_ids)])
+               if ids_categ:
+                   # c'è almeno una definizione per categoria
+                   for riga_contr in self.browse(cr, uid, ids_articolo):
+                    if qty >= riga_contr.fromqty and qty <= riga_contr.toqty:
+                       riga.update({'prezzo_netto':riga_contr.prezzo - (riga_contr.prezzo * riga_contr.discount_riga / 100)})
+                       riga.update({'sconti':riga_contr.sconti})
+                       riga.update({'discount_riga':riga_contr.discount_riga})
+                       riga.update({'prezzo':riga_contr.prezzo})
+           if not riga:
+                # non ha trovato nulla di interessante per categoria  quindi se c'è una riga di solo c
+                # partner la tiene in considerazione altrimenti riga sarà vuota
+                for riga_contr in self.browse(cr, uid, ids_righe):
+                    if not riga_contr.product_id and not riga_contr.categ_id:
+                        # è riga di solo partner in questo caso va bene
+                       riga.update({'prezzo_netto':riga_contr.prezzo - (riga_contr.prezzo * riga_contr.discount_riga / 100)})
+                       riga.update({'sconti':riga_contr.sconti})
+                       riga.update({'discount_riga':riga_contr.discount_riga})
+                       riga.update({'prezzo':riga_contr.prezzo})                       
+       return riga
+
    def calcola_netto(self, prezzo, sconto):
        return prezzo - (prezzo * sconto / 100)
    
@@ -280,10 +349,30 @@ class product_product(osv.osv):
             res.setdefault(id, 0.0)
         return res    
     
+    
+    def _product_price_defa_iva_inc(self, cr, uid, ids, name, arg, context=None):
+        res = {}
+        if context is None:
+            context = {}
+        if ids:
+            for product in self.browse(cr, uid, ids):
+                # import pdb;pdb.set_trace()
+                tasse_ids = self.pool.get('account.fiscal.position').map_tax(cr, uid, False, product.taxes_id)
+                if tasse_ids:
+                    price_vat = 0
+                    for tassa in self.pool.get('account.tax').browse(cr, uid, tasse_ids):
+                        price_vat = product.price_default * (1 + tassa.amount)
+                        res[product.id] = price_vat
+        for id in ids:
+            res.setdefault(id, 0.0)
+
+        return res
+    
     _columns = {
                 'righe_listini': fields.one2many('listini', 'product_id', 'Righe Listini', required=False),
                 'righe_ultimi_prezzi': fields.one2many('ultimi.prezzi', 'product_id', 'Righe Ultimi Prezzi', required=False),
                 'price_default': fields.function(_product_price_defa, method=True, type='float', string='Prezzo Netto Default', digits_compute=dp.get_precision('Sale Price')),
+                'price_default_iva_inc': fields.function(_product_price_defa_iva_inc, method=True, type='float', string='Prezzo Ivato Default', digits_compute=dp.get_precision('Sale Price')),
                 }
 
 product_product()

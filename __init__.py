@@ -20,6 +20,8 @@
 
 import product
 import sale_order
+import FiscalDocument
+import point_of_sale
 
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
